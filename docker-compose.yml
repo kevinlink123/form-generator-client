@@ -1,0 +1,56 @@
+x-common-variables: &common-variables
+  MYSQL_DATABASE: form_generator
+  MYSQL_USER: kevin
+  MYSQL_PASSWORD: zeldadofus
+
+services:
+  mysql_db:
+    image: mysql
+    restart: always
+    cap_add:
+      - SYS_NICE
+    ports:
+      - "9907:3307"
+    environment:
+      MYSQL_DATABASE: form_generator
+      MYSQL_USER: kevin
+      MYSQL_PASSWORD: zeldadofus
+      MYSQL_ROOT_PASSWORD: zeldadofus
+      MYSQL_HOST: localhost
+
+  api:
+    network_mode: host
+    build:
+      dockerfile: Dockerfile
+      context: "./backend"
+    depends_on:
+      - mysql_db
+    volumes:
+      - ./backend:/app
+    environment:
+      MYSQL_DATABASE: form_generator
+      MYSQL_USER: kevin
+      MYSQL_PASSWORD: zeldadofus
+      MYSQL_HOST_IP: mysql_db
+
+  client:
+    ports: 
+      - "3000:3000"
+    stdin_open: true
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    build:
+      dockerfile: Dockerfile
+      context: ./frontend
+    volumes:
+      - ./frontend:/app
+
+  adminer:
+      image: adminer:latest
+      restart: unless-stopped
+      ports:
+        - "8000:8080"
+      depends_on:
+        - mysql_db
+      environment:
+        ADMINER_DEFAULT_SERVER: mysql_db
